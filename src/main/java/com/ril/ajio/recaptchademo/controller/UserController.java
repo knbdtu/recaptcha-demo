@@ -1,8 +1,9 @@
 package com.ril.ajio.recaptchademo.controller;
 
+import cn.apiclub.captcha.Captcha;
 import com.ril.ajio.recaptchademo.model.User;
 import com.ril.ajio.recaptchademo.service.IUserService;
-import com.ril.ajio.recaptchademo.validator.CaptchaValidator;
+import com.ril.ajio.recaptchademo.util.CaptchaUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,37 +18,47 @@ public class UserController {
     @Autowired
     private IUserService service;
 
-    @Autowired
-    private CaptchaValidator validator;
-
     @GetMapping("/register")
     public String registerUser(Model model) {
-        model.addAttribute("user", new User());
+        User user = new User();
+        getCaptcha(user);
+        model.addAttribute("user", user);
         return "registerUser";
     }
 
     @PostMapping("/save")
     public String saveUser(
             @ModelAttribute User user,
-            Model model,
-            @RequestParam("g-recaptcha-response") String captcha
+            Model model
     ) {
-        if(validator.isValidCaptcha(captcha)) {
-            String userId = service.createUser(user);
-            model.addAttribute("message", "User with id : '"+userId+"' Saved Successfully !");
-            model.addAttribute("user", new User());
-        } else{
-            model.addAttribute("message", "Please validate captcha first");
+        if(user.getCaptcha().equals(user.getHiddenCaptcha())) {
+            service.createUser(user);
+            model.addAttribute("message", "User Registered successfully!");
+            return "redirect:allUsers";
         }
-
+        else {
+            model.addAttribute("message", "Invalid Captcha");
+            getCaptcha(user);
+            model.addAttribute("user", user);
+        }
         return "registerUser";
     }
 
-    @GetMapping("/all")
+    @GetMapping("/allUsers")
     public String getAllUsers(Model model) {
-        List<User> users= service.getAllUsers();
-        model.addAttribute("list", users);
+        List<User> userList= service.getAllUsers();
+        model.addAttribute("userList", userList);
         return "listUsers";
     }
+
+    private void getCaptcha(User user) {
+        Captcha captcha = CaptchaUtil.createCaptcha(240, 70);
+        user.setHiddenCaptcha(captcha.getAnswer());
+        user.setCaptcha(""); // value entered by the User
+        user.setRealCaptcha(CaptchaUtil.encodeCaptcha(captcha));
+
+    }
+
+
 
 }

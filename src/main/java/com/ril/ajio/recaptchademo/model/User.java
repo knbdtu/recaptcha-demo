@@ -3,6 +3,7 @@ package com.ril.ajio.recaptchademo.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -19,4 +20,13 @@ public class User {
     @Indexed(unique = true)
     @JsonProperty("emailId")
     private String emailId;
+
+    @Transient
+    private String captcha;
+
+    @Transient
+    private String hiddenCaptcha;
+
+    @Transient
+    private String realCaptcha;
 }
